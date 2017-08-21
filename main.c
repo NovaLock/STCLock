@@ -1,27 +1,27 @@
-#include <STC15W408AS.h>					//8.7µ÷ÊÔ£¬´®¿Ú½ÓÊÕ³¤×Ö·û´®²¢ÇÒÅĞ¶Ï
+#include <STC15W408AS.h>					//8.21è°ƒè¯•ï¼Œå•ç‰‡æœºä¸æ ‘è“æ´¾ï¼Œè“ç‰™äº¤äº’
 #include <intrins.h>
 #include<stdio.h>
 unsigned char message;
-char s1[]="Swadia";
-char s2[]="Rhodok";
-char u1[]="Knight";
-char u2[]="Pikeman";
-char u3[]="Error!";
-char rec[30];
+char headclient[]="ANDR";
+char headserver[]="RAPI";
+char output1[]="Frog";
+char output2[]="Naive";
+char output3[]="Error";
+char rec[50];
 int length=0;
-void init_serial()    					//³õÊ¼»¯´®¿Ú
-{  				                     //¶¨Ê±Æ÷T2Ê¹ÓÃ¹¤×÷·½Ê½1£¬²¨ÌØÂÊ9600£¬ÔÊĞí½ÓÊÕ¾§Õñ11.0592
-	SCON=0X50;                   //8Î»Êı¾İ£¬¿É±ä²¨ÌØÂÊ
-	AUXR |= 0x01;		           //´®¿Ú1Ñ¡Ôñ¶¨Ê±Æ÷2Îª²¨ÌØÂÊ·¢ÉúÆ÷
-	AUXR|=0X04;                //¶¨Ê±Æ÷2Ê±ÖÓÎªFosc£¬¼´1T
-	T2L=0xE0;     					 //ÉèÖÃ¶¨Ê±Æ÷´¦ÖÃ  110592¡·9600
-	T2H=0xfE;               //ÉèÖÃ¶¨Ê±Æ÷´¦ÖÃ  110592¡·9600
-	AUXR|=0X10;            //Æô¶¯¶¨Ê±Æ÷2
+void init_serial()    					//åˆå§‹åŒ–ä¸²å£
+{  				                     //å®šæ—¶å™¨T2ä½¿ç”¨å·¥ä½œæ–¹å¼1ï¼Œæ³¢ç‰¹ç‡9600ï¼Œå…è®¸æ¥æ”¶æ™¶æŒ¯11.0592
+	SCON=0X50;                   //8ä½æ•°æ®ï¼Œå¯å˜æ³¢ç‰¹ç‡
+	AUXR |= 0x01;		           //ä¸²å£1é€‰æ‹©å®šæ—¶å™¨2ä¸ºæ³¢ç‰¹ç‡å‘ç”Ÿå™¨
+	AUXR|=0X04;                //å®šæ—¶å™¨2æ—¶é’Ÿä¸ºFoscï¼Œå³1T
+	T2L=0xE0;     					 //è®¾ç½®å®šæ—¶å™¨å¤„ç½®  110592ã€‹9600
+	T2H=0xfE;               //è®¾ç½®å®šæ—¶å™¨å¤„ç½®  110592ã€‹9600
+	AUXR|=0X10;            //å¯åŠ¨å®šæ—¶å™¨2
 	TI=1;
 	EA=1;
-	IE=0; 	//ÆÁ±ÎÖÖĞ¶
+	IE=0; 	//å±è”½ç§å¸
 }
-void delayMS(unsigned int ms)   //@11.0592MHz   //ÑÓÊ±1ms
+void delayMS(unsigned int ms)   //@11.0592MHz   //å»¶æ—¶1ms
 {
 	unsigned char y;
 	while (ms--)
@@ -36,70 +36,91 @@ void delayMS(unsigned int ms)   //@11.0592MHz   //ÑÓÊ±1ms
 	}
 }	
 
-void SendOneByte(unsigned char dat)								//·¢ËÍµ¥¸ö×Ö½Úº¯Êı
+void SendOneByte(unsigned char dat)								//å‘é€å•ä¸ªå­—èŠ‚å‡½æ•°
 {           
-		SBUF=dat;    //·¢ËÍÊı¾İ
-		while(!TI);   //µÈ´ı·¢ËÍÍê±Ï
-		TI=0;         //·¢ËÍÍê±Ï.
+		SBUF=dat;    //å‘é€æ•°æ®
+		while(!TI);   //ç­‰å¾…å‘é€å®Œæ¯•
+		TI=0;         //å‘é€å®Œæ¯•.
 }
+
 void Receive()
 {
-	if(RI==1)    						//¼ì²âÊÇ·ñÓĞÊı¾İ½ÓÊÕ
+	if(RI==1)    						//æ£€æµ‹æ˜¯å¦æœ‰æ•°æ®æ¥æ”¶
 	{
-		message=SBUF;     			//½ÓÊÕÊı¾İ
-		rec[length]=message;         //´æ´¢Êı¾İ
-		RI=0;							//Çå³ı±êÖ¾Î»
+		message=SBUF;     			//æ¥æ”¶æ•°æ®
+		rec[length]=message;         //å­˜å‚¨æ•°æ®
+		RI=0;							//æ¸…é™¤æ ‡å¿—ä½
 		length=length+1;
 		
 	}
 }
   
-int match(unsigned char strrec[],unsigned char strmatch[])   //ÅĞ¶Ï×Ö·û´®º¯Êı
+int match(unsigned char strrec[],unsigned char strmatch[])   //åˆ¤æ–­å­—ç¬¦ä¸²å‡½æ•°
 {
-	int i=0;
-	for(i=0;i<=5;i++)
+	int i;
+	for(i=0;i<=3;i++)
 	{
 		if(strrec[i]!=strmatch[i]) return 0;
 	}
 	return 1;
 }
-void Send(unsigned char str[])  //·¢ËÍ×Ö·û´®º¯Êı
+int judge(unsigned char str[])
 {
-      int i=1;
+	if(str[4]=='0')
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+void Send(unsigned char str[])  //å‘é€å­—ç¬¦ä¸²å‡½æ•°
+{
+      int i=0;
 	do
 	{
 		SendOneByte(str[i]);
 		i++;
 	}while(str[i]!='\0');
 }
+void Sendtoken(unsigned char str[])
+{
+	int i=4;
+	SendOneByte('@');
+	do
+	{
+		SendOneByte(str[i]);
+		i++;
+	}while(str[i]!='#');
+}
 void main()
 {
 	int i;
-	init_serial();						//´®¿Ú³õÊ¼»¯							
+	init_serial();						//ä¸²å£åˆå§‹åŒ–
+	delayMS(1000);
+	Send(output2);
     while(1)
 	{
 		    Receive();
-			if(message=='#')         //Journal:1:±ØĞë½ÓÊÕÍê²ÅÄÜdelay   2£ºrec×Ö·û´®²»ºÃÊ¹
+			if(message=='#')         //Journal:1:å¿…é¡»æ¥æ”¶å®Œæ‰èƒ½delay   2ï¼šrecå­—ç¬¦ä¸²ä¸å¥½ä½¿
 			{
-				Send(rec);
-			if(match(rec,s1))
+			if(match(rec,headclient))  //åŒ¹é…å®‰å“ç«¯
 			{
-				Send(u1);
+				Sendtoken(rec);      //å»å¤´å»å°¾å‘é€token
 			}
-			else if (match(rec,s2))
+			else if (match(rec,headserver))   //åŒ¹é…æ ‘è“æ´¾
 			{
-				Send(u2);
+				if(judge(rec))   //åˆ¤æ–­æ˜¯å¦æ­£ç¡®
+				{
+					Send(output1);
+				}
 			}
-			else
-			{
-				Send(u3);
-			}
-			for(i=0;i<length;i++)   //Çå³ı´æ´¢Êı¾İ
+			for(i=0;i<length;i++)   //æ¸…é™¤å­˜å‚¨æ•°æ®
 			{
 				rec[i]='\0';
 			}
 			length=0;message='\0';
-			delayMS(5000);
 			}
 	}
 }
